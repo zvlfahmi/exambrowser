@@ -1,22 +1,33 @@
 package com.itclubdev.wv
 
+import android.bluetooth.BluetoothAdapter
+import android.content.BroadcastReceiver
+import android.content.Context
 import android.content.Intent
+import android.media.AudioManager
+import android.media.MediaPlayer
 import android.os.Bundle
+import android.webkit.CookieManager
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.Button
 import android.widget.EditText
 import android.widget.Toast
-import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
 
 class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-
+        val mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter()
+        if (mBluetoothAdapter == null) {
+            // Device does not support Bluetooth
+        } else if (!mBluetoothAdapter.isEnabled) {
+            // Bluetooth is not enabled :)
+        } else {
+            Toast.makeText(this, "Matikan Bluetooth", Toast.LENGTH_SHORT).show()
+            finishAffinity()
+        }
         val button: Button = findViewById(R.id.login)
         val passwordEditText: EditText = findViewById(R.id.pass)
 
@@ -27,27 +38,62 @@ class MainActivity : AppCompatActivity() {
                 startActivity(intent)
                 startLockTask()
             } else {
-                Toast.makeText(this, "Incorrect password", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "Password Salah", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+}
+
+class WebViewActivity : AppCompatActivity() {
+    private lateinit var mediaPlayer: MediaPlayer
+
+    private fun playExitSound() {
+        val audioManager = getSystemService(Context.AUDIO_SERVICE) as AudioManager
+        val result = audioManager.requestAudioFocus(
+            { _ ->
+
+            }, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN_TRANSIENT
+        )
+
+        if (result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
+            val maxVolume = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC)
+            audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, maxVolume, 0)
+            mediaPlayer.start()
+
+            mediaPlayer.setOnCompletionListener {
+                audioManager.abandonAudioFocus(null)
             }
         }
     }
 
-    class WebViewActivity : AppCompatActivity() {
-        override fun onCreate(savedInstanceState: Bundle?) {
-            super.onCreate(savedInstanceState)
-            setContentView(R.layout.activity_webview)
 
-            val myWebView: WebView = findViewById(R.id.webview)
-            myWebView.settings.javaScriptEnabled = true
-            myWebView.webViewClient = WebViewClient()
-            myWebView.loadUrl("https://elearning.man1metro.sch.id")
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_webview)
+        mediaPlayer = MediaPlayer.create(this, R.raw.alert) //add that annoying tinung sound
+        val myWebView: WebView = findViewById(R.id.webview)
+        myWebView.settings.javaScriptEnabled = true
+        myWebView.webViewClient = WebViewClient()
+        myWebView.loadUrl("https://elearning.man1metro.sch.id")
 
 
-            val exitButton: Button = findViewById(R.id.exit_button)
-            exitButton.setOnClickListener {
-                finishAffinity()
-                stopLockTask()
-            }
+        val exitButton: Button = findViewById(R.id.exit_button)
+        exitButton.setOnClickListener {
+            playExitSound()
+            stopLockTask()
+            CookieManager.getInstance().removeAllCookies(null)
+            finishAffinity()
+        }
+    }
+
+}
+
+class ScreenLockReceiver : BroadcastReceiver() {
+    override fun onReceive(context: Context, intent: Intent) {
+        if (intent.action == Intent.ACTION_SCREEN_OFF) {
+            // Play the sound here
+            val mediaPlayer = MediaPlayer.create(context, R.raw.alert)
+            mediaPlayer.start()
         }
     }
 }

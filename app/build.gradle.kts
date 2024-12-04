@@ -3,6 +3,8 @@ plugins {
     alias(libs.plugins.kotlin.android)
 }
 
+var buildType = ""
+
 android {
     namespace = "com.itclubdev.wv"
     compileSdk = 35
@@ -19,11 +21,13 @@ android {
 
     buildTypes {
         release {
+            buildType = "release"
             isMinifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            signingConfig = signingConfigs.getByName("debug")
         }
     }
     compileOptions {
@@ -32,6 +36,9 @@ android {
     }
     kotlinOptions {
         jvmTarget = "11"
+    }
+    lint {
+        baseline = file("lint-baseline.xml")
     }
 }
 
