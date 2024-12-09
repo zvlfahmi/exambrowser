@@ -26,17 +26,12 @@
             </intent-filter>
         </activity>
 
-        <receiver android:name=".ScreenLockReceiver"
-            android:exported="true">
-            <intent-filter>
-                <action android:name="android.intent.action.SCREEN_OFF" />
-            </intent-filter>
-        </receiver>
-
 
         <activity
             android:name=".WebViewActivity"
             android:exported="true" />
+
     </application>
+
 
 </manifest>
