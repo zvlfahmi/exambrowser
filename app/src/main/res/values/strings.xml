@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="textmain">Hello, User.\n</string>
+    <string name="textmain">Hello, User.</string>
     <string name="login">Login</string>
     <string name="exit">Exit</string>
+    <string name="pass">Password</string>
+    <string name="wm">by zvlfahmi</string>
+    <string name="refresh">Refresh</string>
 </resources>
