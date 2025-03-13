@@ -6,4 +6,7 @@
     <string name="pass">Password</string>
     <string name="wm">by zvlfahmi</string>
     <string name="refresh">Refresh</string>
+    <string name="locked">Aplikasi dikunci sementara selama:</string>
+    <string name="noerror">Kalau Murid bilang Aplikasi Error, dia berbohong.</string>
+    <string name="bypass">Bypass</string>
 </resources>

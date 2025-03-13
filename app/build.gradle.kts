@@ -11,11 +11,15 @@ android {
 
     defaultConfig {
         applicationId = "com.itclubdev.wv"
-        minSdk = 24
+        minSdk = 26
         targetSdk = 34
         versionCode = 1
-        versionName = "1.0"
-
+        versionName = "0.1b"
+        externalNativeBuild {
+            ndkBuild {
+                abiFilters("arm64-v8a", "armeabi-v7a")
+            }
+        }
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 

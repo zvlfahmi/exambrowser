@@ -2,35 +2,119 @@ package com.itclubdev.wv
 
 import android.annotation.SuppressLint
 import android.bluetooth.BluetoothAdapter
+import android.graphics.Color
 import android.content.Context
 import android.content.Intent
 import android.view.KeyEvent
+import android.widget.TextView
 import android.view.View
-
-
 import android.media.AudioManager
+import java.io.File
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 import android.media.MediaPlayer
 import android.os.Bundle
+import android.view.WindowManager
 import android.webkit.CookieManager
-import android.view.WindowManager.LayoutParams
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.Button
 import android.widget.EditText
 import android.widget.Toast
+import android.view.WindowManager.LayoutParams
+import java.time.Duration
 import androidx.appcompat.app.AppCompatActivity
 
 class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        val disableFile = File(filesDir, "disable.txt")
+        if (disableFile.exists()) {
+            val timestampString = disableFile.readText()
+            showLockedScreen(disableFile, timestampString)
+        } else {
+            initView()
+        }
+    }
+
+    private var secretButtonTapCount = 0
+    private lateinit var bypassButton: Button
+    private lateinit var bypassEditText: EditText
+
+
+    private fun showLockedScreen(disableFile: File, timestampString: String) {
+        setContentView(R.layout.activity_locked)
+        val timeLeftTextView: TextView = findViewById(R.id.timeremaining)
+        val formatter = DateTimeFormatter.ISO_DATE_TIME
+        val disableTime = LocalDateTime.parse(timestampString, formatter)
+        val now = LocalDateTime.now()
+        val remainingTime = Duration.between(now, disableTime.plusMinutes(15)).toMillis()
+
+        if (remainingTime > 0) {
+            val timer = object : android.os.CountDownTimer(remainingTime, 1000) {
+                override fun onTick(millisUntilFinished: Long) {
+                    val remainingDuration = Duration.ofMillis(millisUntilFinished)
+                    val minutes = remainingDuration.toMinutes()
+                    val seconds = remainingDuration.minusMinutes(minutes).seconds
+                    val timeLeftString = String.format("%02d:%02d", minutes, seconds)
+                    timeLeftTextView.text = timeLeftString
+                }
+
+                override fun onFinish() {
+                    disableFile.delete()
+                    initView()
+                }
+            }
+
+            timer.start()
+        } else {
+            disableFile.delete();
+            initView();
+
+        }
+
+        val secretButton: Button = findViewById(R.id.secretbutton)
+        bypassButton = findViewById(R.id.bypassbutton)
+        bypassEditText = findViewById(R.id.bypass)
+        bypassButton.visibility = View.GONE
+        bypassEditText.visibility = View.GONE
+
+        secretButton.setBackgroundColor(Color.TRANSPARENT)
+        secretButton.setOnClickListener {
+            secretButtonTapCount++
+            if (secretButtonTapCount >= 5) {
+                bypassButton.visibility = View.VISIBLE
+                bypassEditText.visibility = View.VISIBLE
+                secretButtonTapCount = 0
+            }
+        }
+
+
+        val button: Button = bypassButton
+        val passwordEditText: EditText = bypassEditText
+
+        button.setBackgroundColor(Color.TRANSPARENT)
+        button.setTextColor(Color.WHITE)
+
+        passwordEditText.setBackgroundColor(Color.BLACK)
+        passwordEditText.setTextColor(Color.WHITE)
+
+        button.setOnClickListener {
+            val enteredPassword = passwordEditText.text.toString()
+            if (enteredPassword == "bypasslockdown") {
+                Toast.makeText(this, "Bypassed", Toast.LENGTH_SHORT).show()
+                disableFile.delete();
+                initView();
+
+            } else {
+                Toast.makeText(this, "Password Salah", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+    private fun initView() {
         setContentView(R.layout.activity_main)
         val mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter()
-        if (mBluetoothAdapter == null) {
-            // Device does not support Bluetooth
-        } else if (!mBluetoothAdapter.isEnabled) {
-            // Bluetooth is not enabled :)
-        } else {
-            Toast.makeText(this, "Matikan Bluetooth", Toast.LENGTH_SHORT).show()
+        if (mBluetoothAdapter != null && mBluetoothAdapter.isEnabled) {
             finishAffinity()
         }
         val button: Button = findViewById(R.id.login)
@@ -47,13 +131,11 @@ class MainActivity : AppCompatActivity() {
             }
         }
     }
-
-
 }
 
 class WebViewActivity : AppCompatActivity() {
     private lateinit var mediaPlayer: MediaPlayer
-    var exit = false
+    private var exit = false
     private fun playExitSound() {
         val audioManager = getSystemService(Context.AUDIO_SERVICE) as AudioManager
         val result = audioManager.requestAudioFocus(
@@ -62,7 +144,6 @@ class WebViewActivity : AppCompatActivity() {
             }, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN_TRANSIENT
         )
 
-        if (result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
             val maxVolume = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC)
             audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, maxVolume, 0)
             mediaPlayer.start()
@@ -70,19 +151,27 @@ class WebViewActivity : AppCompatActivity() {
             mediaPlayer.setOnCompletionListener {
                 audioManager.abandonAudioFocus(null)
             }
-        }
     }
 
 
     override fun onStop() {
-        if (exit == false) {
-            window.clearFlags(LayoutParams.FLAG_KEEP_SCREEN_ON)
+        if (!exit) {
             mediaPlayer = MediaPlayer.create(this, R.raw.buzzer)
             playExitSound()
+
+            window.clearFlags(LayoutParams.FLAG_KEEP_SCREEN_ON)
+            val disableFile = File(filesDir, "disable.txt")
+            if (!disableFile.exists()) {
+                val currentDateTime = LocalDateTime.now()
+                val formatter = DateTimeFormatter.ISO_DATE_TIME
+                val formattedDateTime = currentDateTime.format(formatter)
+                disableFile.writeText(formattedDateTime)
+            }
             finishAffinity()
             super.onStop()
         } else {
             super.onStop()
+
         }
     }
 
@@ -116,6 +205,8 @@ class WebViewActivity : AppCompatActivity() {
         window.addFlags(LayoutParams.FLAG_KEEP_SCREEN_ON)
         window.addFlags(LayoutParams.FLAG_DISMISS_KEYGUARD)
         window.addFlags(LayoutParams.FLAG_SHOW_WHEN_LOCKED)
+        //disable screenshot and recording
+        window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
 
         // Hide the navigation bar and make the app full-screen
         window.decorView.systemUiVisibility = (
@@ -148,5 +239,3 @@ class WebViewActivity : AppCompatActivity() {
         }
     }
 }
-
-    
