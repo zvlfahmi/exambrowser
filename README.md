@@ -9,7 +9,7 @@ This app is the continuation of [MAN IT Club's CBT App](https://github.com/itclu
 ## "Feature"
 as of right now, this app doesn't have that much feature but here's a list of them:
 
-- "Kiosk" Mode (Pin)
-- Sound when exiting (NOT WORKING PROPERLY)
-- No Bluetooth
-- Disable opening the app in Windowed mode
+- "Kiosk" Mode (Pin) (added in v0.1b)
+- Sound when exiting (added in v0.1b)
+- No Bluetooth (added in v0.1b)
+- Disable opening the app in Windowed mode (added in v0.1b)
