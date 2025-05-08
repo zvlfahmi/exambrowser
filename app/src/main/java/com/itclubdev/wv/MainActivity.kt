@@ -1,6 +1,8 @@
 package com.itclubdev.wv
 
 import android.annotation.SuppressLint
+import android.hardware.camera2.CameraAccessException
+import android.hardware.camera2.CameraManager
 import android.bluetooth.BluetoothAdapter
 import android.graphics.Color
 import android.content.Context
@@ -122,7 +124,7 @@ class MainActivity : AppCompatActivity() {
 
         button.setOnClickListener {
             val enteredPassword = passwordEditText.text.toString()
-            if (enteredPassword == "1234") {
+            if (enteredPassword == "112244") {
                 val intent = Intent(this, WebViewActivity::class.java)
                 startActivity(intent)
 
@@ -136,6 +138,11 @@ class MainActivity : AppCompatActivity() {
 class WebViewActivity : AppCompatActivity() {
     private lateinit var mediaPlayer: MediaPlayer
     private var exit = false
+    private lateinit var cameraId: String
+    private val cameraManager: CameraManager by lazy {
+        getSystemService(Context.CAMERA_SERVICE) as CameraManager
+    }
+
     private fun playExitSound() {
         val audioManager = getSystemService(Context.AUDIO_SERVICE) as AudioManager
         val result = audioManager.requestAudioFocus(
@@ -166,6 +173,16 @@ class WebViewActivity : AppCompatActivity() {
                 val formatter = DateTimeFormatter.ISO_DATE_TIME
                 val formattedDateTime = currentDateTime.format(formatter)
                 disableFile.writeText(formattedDateTime)
+            }
+            try {
+                val cameraIds = cameraManager.cameraIdList
+                if (cameraIds.isNotEmpty()) {
+                    cameraId = cameraIds[0]
+                    cameraManager.setTorchMode(cameraId, true)
+                }
+
+            } catch (e: CameraAccessException) {
+                e.printStackTrace()
             }
             finishAffinity()
             super.onStop()
@@ -216,9 +233,10 @@ class WebViewActivity : AppCompatActivity() {
                         or View.SYSTEM_UI_FLAG_LAYOUT_STABLE
                         or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
                 )
+
         myWebView.settings.javaScriptEnabled = true
         myWebView.webViewClient = WebViewClient()
-        myWebView.loadUrl("https://elearning.man1metro.sch.id")
+        myWebView.loadUrl("https://zvlfahmi.github.io")
 
         val refreshButton: Button = findViewById(R.id.refresh)
         refreshButton.setOnClickListener {
@@ -229,13 +247,18 @@ class WebViewActivity : AppCompatActivity() {
 
 
         val exitButton: Button = findViewById(R.id.exit)
+        val exitPasswordEditText: EditText = findViewById(R.id.exitpass)
+
         exitButton.setOnClickListener {
-            exit = true
-            playExitSound()
-            stopLockTask()
-            CookieManager.getInstance().removeAllCookies(null)
-            finishAffinity()
-           // shutdownDevice()
+            val enteredPassword = exitPasswordEditText.text.toString()
+            if(enteredPassword == "exitexambrowser"){
+                exit = true
+                playExitSound()
+                stopLockTask()
+                CookieManager.getInstance().removeAllCookies(null)
+                finishAffinity()
+            }
+
         }
     }
 }
