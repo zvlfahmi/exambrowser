@@ -1,5 +1,8 @@
 package com.itclubdev.wv
 
+import android.os.PowerManager
+import android.content.pm.PackageManager
+import android.app.usage.UsageStatsManager
 import android.annotation.SuppressLint
 import android.hardware.camera2.CameraAccessException
 import android.hardware.camera2.CameraManager
@@ -16,7 +19,9 @@ import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import android.media.MediaPlayer
 import android.os.Bundle
+import android.os.Handler
 import android.view.WindowManager
+import android.provider.Settings
 import android.webkit.CookieManager
 import android.webkit.WebView
 import android.webkit.WebViewClient
@@ -26,11 +31,101 @@ import android.widget.Toast
 import android.view.WindowManager.LayoutParams
 import java.time.Duration
 import androidx.appcompat.app.AppCompatActivity
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
+import androidx.core.net.toUri
+import kotlinx.coroutines.DelicateCoroutinesApi
+import java.net.URL
 
 class MainActivity : AppCompatActivity() {
+
+    private val handler = Handler()
+    private lateinit var runnable: Runnable
+    private lateinit var bannedapp: List<String>
+
+    @OptIn(DelicateCoroutinesApi::class)
+    @SuppressLint("BatteryLife")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        // Initialize bannedapp as an empty list first
+        bannedapp = emptyList()
+
+        // Coroutine to fetch and save banned apps
+        GlobalScope.launch(Dispatchers.IO) {
+            try {
+                val url = URL("https://zvlfahmi.github.io/banned-apps.txt")
+                val content = url.readText()
+                val blacklistFile = File(filesDir, "blacklist")
+                blacklistFile.writeText(content)
+
+                launch(Dispatchers.Main) {
+                    bannedapp = blacklistFile.readLines()
+                    continueOnCreate()
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+                launch(Dispatchers.Main) {
+                    Toast.makeText(this@MainActivity, "Gagal mengupdate database, cek koneksi internet", Toast.LENGTH_LONG).show()
+                    val blacklistFile = File(filesDir, "blacklist")
+                    if (blacklistFile.exists()) {
+                        bannedapp = blacklistFile.readLines()
+                    }
+                    continueOnCreate()
+                }
+            }
+        }
+    }
+
+    @SuppressLint("BatteryLife")
+    private fun continueOnCreate() {
+
+        if (!isUsageAccessGranted()) {
+            val intent = Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS)
+            startActivity(intent)
+            Toast.makeText(this@MainActivity, "Izinkan penggunaan aplikasi", Toast.LENGTH_SHORT).show()
+        }
+
+        val packageName = packageName
+        val powerManager = getSystemService(Context.POWER_SERVICE) as PowerManager
+        if (!powerManager.isIgnoringBatteryOptimizations(packageName)) {
+            val intent = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS)
+            intent.data = "package:$packageName".toUri()
+            startActivity(intent)
+            Toast.makeText(this@MainActivity, "Pilih Tidak ada pembatasan", Toast.LENGTH_SHORT).show()
+        }
+
+        runnable = object : Runnable {
+            override fun run() {
+                val usageStatsManager = getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager
+                val time = System.currentTimeMillis()
+                val stats = usageStatsManager.queryEvents(time - 1000 * 10, time)
+                val event = android.app.usage.UsageEvents.Event()
+                while (stats.hasNextEvent()) {
+                    stats.getNextEvent(event)
+                    if (event.eventType == android.app.usage.UsageEvents.Event.MOVE_TO_FOREGROUND) {
+
+                        if (::bannedapp.isInitialized && event.packageName in bannedapp) {
+                            val disableFile = File(filesDir, "disable.txt")
+                            if (!disableFile.exists()) {
+                                val currentDateTime = LocalDateTime.now()
+                                val formatter = DateTimeFormatter.ISO_DATE_TIME
+                                val formattedDateTime = currentDateTime.format(formatter)
+                                disableFile.writeText(formattedDateTime)
+                                finishAffinity()
+                            }
+                        }
+                    }
+                }
+                handler.postDelayed(this, 100)
+            }
+
+        }
+        handler.post(runnable)
+
         val disableFile = File(filesDir, "disable.txt")
+
         if (disableFile.exists()) {
             val timestampString = disableFile.readText()
             showLockedScreen(disableFile, timestampString)
@@ -39,11 +134,16 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    override fun onDestroy() {
+        super.onDestroy()
+        handler.removeCallbacks(runnable)
+    }
+
     private var secretButtonTapCount = 0
     private lateinit var bypassButton: Button
     private lateinit var bypassEditText: EditText
 
-
+    @OptIn(DelicateCoroutinesApi::class)
     private fun showLockedScreen(disableFile: File, timestampString: String) {
         setContentView(R.layout.activity_locked)
         val timeLeftTextView: TextView = findViewById(R.id.timeremaining)
@@ -102,17 +202,29 @@ class MainActivity : AppCompatActivity() {
         passwordEditText.setTextColor(Color.WHITE)
 
         button.setOnClickListener {
-            val enteredPassword = passwordEditText.text.toString()
-            if (enteredPassword == "bypasslockdown") {
-                Toast.makeText(this, "Bypassed", Toast.LENGTH_SHORT).show()
-                disableFile.delete();
-                initView();
-
-            } else {
-                Toast.makeText(this, "Password Salah", Toast.LENGTH_SHORT).show()
-            }
-        }
+            val enteredPassword = passwordEditText.text.toString().trim()
+            GlobalScope.launch(Dispatchers.IO) {
+                try {
+                    val url = URL("https://zvlfahmi.github.io/bypass-lockdown-pass.txt")
+                    val remotePassword = url.readText().trim()
+                    launch(Dispatchers.Main) {
+                        if (enteredPassword == remotePassword) {
+                            Toast.makeText(this@MainActivity, "Bypassed", Toast.LENGTH_SHORT).show()
+                            disableFile.delete()
+                            initView()
+                        } else {
+                            Toast.makeText(this@MainActivity, "Password Salah", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                } catch (e: Exception) {
+                    launch(Dispatchers.Main) {
+                        Toast.makeText(this@MainActivity, "Gagal mengupdate database", Toast.LENGTH_SHORT).show()
+                    }
+                    e.printStackTrace()
+                }
+            }        }
     }
+
     private fun initView() {
         setContentView(R.layout.activity_main)
         val mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter()
@@ -131,6 +243,18 @@ class MainActivity : AppCompatActivity() {
             } else {
                 Toast.makeText(this, "Password Salah", Toast.LENGTH_SHORT).show()
             }
+        }
+    }
+
+    private fun isUsageAccessGranted(): Boolean {
+        return try {
+            val packageManager = packageManager
+            val applicationInfo = packageManager.getApplicationInfo(packageName, 0)
+            val appOpsManager = getSystemService(Context.APP_OPS_SERVICE) as android.app.AppOpsManager
+            val mode = appOpsManager.checkOpNoThrow(android.app.AppOpsManager.OPSTR_GET_USAGE_STATS, applicationInfo.uid, applicationInfo.packageName)
+            mode == android.app.AppOpsManager.MODE_ALLOWED
+        } catch (e: PackageManager.NameNotFoundException) {
+            false
         }
     }
 }
@@ -236,7 +360,7 @@ class WebViewActivity : AppCompatActivity() {
 
         myWebView.settings.javaScriptEnabled = true
         myWebView.webViewClient = WebViewClient()
-        myWebView.loadUrl("https://zvlfahmi.github.io")
+        myWebView.loadUrl("https://elearning.man1metro.sch.id")
 
         val refreshButton: Button = findViewById(R.id.refresh)
         refreshButton.setOnClickListener {

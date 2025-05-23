@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="textmain">Hello, User.</string>
+    <string name="textmain">Halo, Pengguna!</string>
     <string name="login">Login</string>
     <string name="exit">Exit</string>
     <string name="pass">Password</string>
-    <string name="wm">by zvlfahmi</string>
+    <string name="wm">Divisi Programming IT Club MAN 1 Metro</string>
     <string name="refresh">Refresh</string>
     <string name="locked">Aplikasi dikunci sementara selama:</string>
     <string name="noerror">Kalau Murid bilang Aplikasi Error, dia berbohong.</string>
     <string name="bypass">Bypass</string>
-    <string name="lmaotext">What are you doing here lmao</string>
+    <string name="lmaotext">Membuka aplikasi yang sudah diblacklist</string>
 </resources>
