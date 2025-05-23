@@ -80,21 +80,33 @@ class MainActivity : AppCompatActivity() {
 
     @SuppressLint("BatteryLife")
     private fun continueOnCreate() {
-
         if (!isUsageAccessGranted()) {
-            val intent = Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS)
+            val intent1 = Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS)
+            startActivity(intent1)
+
+            val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
+            intent.data = "package:$packageName".toUri()
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             startActivity(intent)
-            Toast.makeText(this@MainActivity, "Izinkan penggunaan aplikasi", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this@MainActivity, "Izinkan setelan terbatas lalu izinkan akses penggunaan", Toast.LENGTH_LONG).show()
         }
 
         val packageName = packageName
-        val powerManager = getSystemService(Context.POWER_SERVICE) as PowerManager
+        val powerManager = getSystemService(POWER_SERVICE) as PowerManager
         if (!powerManager.isIgnoringBatteryOptimizations(packageName)) {
             val intent = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS)
             intent.data = "package:$packageName".toUri()
             startActivity(intent)
             Toast.makeText(this@MainActivity, "Pilih Tidak ada pembatasan", Toast.LENGTH_SHORT).show()
         }
+
+
+
+
+
+
+
+
 
         runnable = object : Runnable {
             override fun run() {
@@ -226,6 +238,9 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun initView() {
+        if (!isUsageAccessGranted()) {
+            finishAffinity()
+        }
         setContentView(R.layout.activity_main)
         val mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter()
         if (mBluetoothAdapter != null && mBluetoothAdapter.isEnabled) {

@@ -15,6 +15,8 @@ as of right now, this app doesn't have that much feature but here's a list of th
 - Disable opening the app in Windowed mode (added in v0.1b)
 - Blank screenshot and screenrecord (added in v0.2b)
 - LOCKDOWN TIMER WHEN EXITING APP (added in v0.2b)
+- Blacklisted Apps (added in v0.3b)
+- Automatically update database from internet (added in v0.3b)
 
 ## To-do list
 Note that this to-do list is just a concept being tested, usually insanely privacy invasive feature
