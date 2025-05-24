@@ -29,16 +29,17 @@ as of right now, this app doesn't have that much feature but here's a list of th
 - Notification
 - Usage Access (Required)
 - (Only on Android 14 and above) Restricted Settings (Required)
+  
 ##  Known issues
-1. On Funtouch 15 (Vivo), the sound when the app exits doesn't play at all. But the other safety measures still work.
+1. On Funtouch 15 (Vivo, iQOO), the sound when the app exits doesn't play at all. But the other safety measures still work.
 2. On MIUI 14 (Xiaomi), when you close the app by using gestures (Back + Menu button) it made the phone unresponsive unless you lock the screen with the power button
 
 ## Experimental features plans
-I have a ton of new ideas to stop cheating in CBT Apps, but it's still in experimental stage.<br>
+I have a ton of new ideas to stop cheating in CBT Apps, but it's still in experimental or planning stage.<br>
 I always advocate the importance of privacy in my school, but this app may goes against what i stand for
 - Live camera access
 - (Requires the aforementioned feature) Utilizing Mediapipe and OpenCV to monitor eye movements**
 - Remove the app dependencies for WebView and instead is a standalone app*
 
-(*) Instead of making the app just displaying existing website using WebView, the app instead IS the way to do the exam by pulling question and answer to local and the app displays them.
+(*) Instead of making the app just displaying existing website using WebView, the app instead IS the way to do the exam by pulling question and answer to local and the app displays them.<br>
 (**) Kinda impossible, as OpenCV and Mediapipe requires too much resource. But it's doable!
